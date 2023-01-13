@@ -16,12 +16,6 @@ TOKEN = os.getenv('TOKEN')
 SETUP, EMAIL, PASSWD = range(3)
 
 
-def data_to_str(user_data: Dict[str, str]) -> str:
-    """Helper function for formatting the gathered user info."""
-    data = [f"{key} - {value}" for key, value in user_data.items()]
-    return "\n".join(data).join(["\n", "\n"])
-
-
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Send a welcome message when the command /start is issued"""
     user = update.effective_user
@@ -83,7 +77,6 @@ async def passwd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
     # show user data
     user_data = context.user_data
-    await update.message.reply_text(data_to_str(user_data))
 
     login_result = await sc_login(user_data.get('email'), user_data.get('password'))
     if login_result:
