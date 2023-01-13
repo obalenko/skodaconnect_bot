@@ -23,7 +23,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         return ConversationHandler.END
 
     await update.message.reply_html(
-        rf'Привіт {user.full_name}! З моєю допомогою ти можеш отримати багато корисної інфи зі своєї автівки Skoda!' +
+        rf'Привіт {user.full_name}! З моєю допомогою ти можеш керувати своєю автівкою Skoda!' +
         ' Мене лише потрібно синхронізувати із твоїм обліковим записом Skoda Connect, а про все решта я подбаю! 💚' +
         ' Щоб розпочати налаштування, відправ мені команду /setup'
     )
@@ -55,13 +55,13 @@ async def setup(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         return ConversationHandler.END
 
     await update.message.reply_text(
-        rf'📧 Відправ мені свою електронну адресу, асоційовану з акаунтом у Skoda Connect'
+        rf'📧 Відправ мені свою електронну адресу, асоційовану з акаунтом у сервісі Skoda Connect'
     )
     return EMAIL
 
 
 async def email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Get email from user to authorize in Skoda Connect."""
+    """Get email from user to authorize in Skoda Connect service."""
     text = update.message.text
     context.user_data["email"] = text
     await update.message.reply_text(f'🔑 Тепер відправ мені пароль')
@@ -70,22 +70,37 @@ async def email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 
 async def passwd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Get password from user to authorize in Skoda Connect"""
+    """Get password from user to authorize in Skoda Connect service"""
     text = update.message.text
     context.user_data["password"] = text
-    await update.message.reply_text(f'🔄 Авторизуюсь у Skoda Connect...')
+    await update.message.reply_text(f'🔄 Авторизуюсь у сервісі Skoda Connect...')
 
     # show user data
     user_data = context.user_data
 
-    login_result = await sc_login(user_data.get('email'), user_data.get('password'))
-    if login_result:
+    connection = await sc_login(user_data.get('email'), user_data.get('password'))
+    if connection is not None:
         await update.message.reply_text(f'✅ Авторизація успішна! Я отримав дані про твій автомобіль 🏎,'
                                         f' тож тепер усе що потрібно, питай у мене 😉')
+        context.user_data["connection_stream"] = connection
+        car_name = await _get_car_details(connection)
+
+        if car_name:
+            await update.message.reply_text(f'Знайшов твою {car_name} у гаражі. Гарненька! 💚')
+        else:
+            await update.message.reply_text(f'Хмм... не бачу твоєї автівки в гаражі')
+
     else:
         await update.message.reply_text(f'❌ На жаль, щось пішло не так, авторизація не успішна!')
 
     return ConversationHandler.END
+
+
+# TODO: move to core, refactor to retrieve more info
+async def _get_car_details(connection):
+    car = await connection.get_vehicles()
+    car_name = car[0]['vehicleSpecification'].get('title') if car else {}
+    return car_name
 
 
 if __name__ == '__main__':
