@@ -10,6 +10,7 @@ from telegram.ext import (
     ConversationHandler,
     filters
 )
+from core.auth import sc_login
 
 TOKEN = os.getenv('TOKEN')
 SETUP, EMAIL, PASSWD = range(3)
@@ -28,10 +29,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         return ConversationHandler.END
 
     await update.message.reply_html(
-        rf'Привіт {user.full_name}! Я знаю все про твій автомобіль Skoda!' +
-        ' Просто обери, про що б ти хотів(ла) дізнатись, а я про все подбаю!' +
-        ' Щоб я міг спілкуватись з тобою і твоїм авто, потрібно налаштувати твій існуючий акаунт SkodaConnect' +
-        ' Для цього надішли мені команду /setup'
+        rf'Привіт {user.full_name}! З моєю допомогою ти можеш отримати багато корисної інфи зі своєї автівки Skoda!' +
+        ' Мене лише потрібно синхронізувати із твоїм обліковим записом Skoda Connect, а про все решта я подбаю! 💚' +
+        ' Щоб розпочати налаштування, відправ мені команду /setup'
     )
 
     return ConversationHandler.END
@@ -40,13 +40,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /help is issued."""
     await update.message.reply_text("От халепа ☹️, мій розробник ще на написав детальну інструкцію з описом всіх команд :( "
-                                    "Обіцяю виправити це якнайшвидше ")
+                                    "Він вже працює над цим!")
 
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Cancels and ends the conversation."""
     await update.message.reply_text(
-        "Бувай!👋 Буду радий поспілкуватись ще у будь-який час!"
+        "Йолкі-палки! Ти перервав процес налаштування, доведеться починати з початку! 🫣 "
     )
 
     return ConversationHandler.END
@@ -56,35 +56,41 @@ async def setup(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Starting point to setup Skoda Connect account synchronization."""
     if context.user_data:
         await update.message.reply_text(
-            rf'Схоже, твій акаунт вже налаштовано.'
+            rf'Схоже, що твій акаунт вже налаштовано'
         )
         return ConversationHandler.END
 
     await update.message.reply_text(
-        rf'Давай налаштуємо твій акаунт. Спочатку відправ мені свою електронну адресу, на яку ти зареєстрований у SkodaConnect'
+        rf'📧 Відправ мені свою електронну адресу, асоційовану з акаунтом у Skoda Connect'
     )
     return EMAIL
 
 
 async def email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Get email from user to authorize in SkodaConnect."""
+    """Get email from user to authorize in Skoda Connect."""
     text = update.message.text
     context.user_data["email"] = text
-    await update.message.reply_text(f'Тепер відправ мені пароль')
+    await update.message.reply_text(f'🔑 Тепер відправ мені пароль')
 
     return PASSWD
 
 
 async def passwd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Get password from user to authorize in SkodaConnect"""
+    """Get password from user to authorize in Skoda Connect"""
     text = update.message.text
     context.user_data["password"] = text
-    await update.message.reply_text(f'Чудово, налаштування завершено. Я отримав дані про твій автомобіль 🏎,'
-                                    f' тож тепер усе що потрібно, питай у мене 😉')
+    await update.message.reply_text(f'🔄 Авторизуюсь у Skoda Connect...')
 
     # show user data
     user_data = context.user_data
     await update.message.reply_text(data_to_str(user_data))
+
+    login_result = await sc_login(user_data.get('email'), user_data.get('password'))
+    if login_result:
+        await update.message.reply_text(f'✅ Авторизація успішна! Я отримав дані про твій автомобіль 🏎,'
+                                        f' тож тепер усе що потрібно, питай у мене 😉')
+    else:
+        await update.message.reply_text(f'❌ На жаль, щось пішло не так, авторизація не успішна!')
 
     return ConversationHandler.END
 
