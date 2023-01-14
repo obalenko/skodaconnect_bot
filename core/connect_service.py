@@ -65,3 +65,21 @@ async def retrieve_vehicles(connection):
             exit()
 
     print('Dashboard setup finished successfully')
+
+
+def get_vehicle_base_info(vehicle) -> dict:
+    '''
+
+    :param vehicle:
+    :return:
+    '''
+    base_info = {
+        'model': vehicle.model,
+        'vin': vehicle.vin,
+        'manufactured': vehicle.model_year,
+        'connect_service_deactivated': vehicle.deactivated,
+        'nickname': vehicle.nickname if vehicle.is_nickname_supported else None,
+        'engine_capacity': vehicle.engine_capacity,
+        'engine_type': vehicle.engine_type
+    }
+    return base_info

@@ -10,7 +10,7 @@ from telegram.ext import (
     ConversationHandler,
     filters
 )
-from core.connect_service import init_session, retrieve_vehicles
+from core.connect_service import init_session, retrieve_vehicles, get_vehicle_base_info
 
 TOKEN = os.getenv('TOKEN')
 SETUP, EMAIL, PASSWD = range(3)
@@ -91,8 +91,13 @@ async def passwd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         else:
             await update.message.reply_text(f'Знайшов {len(connection.vehicles)} авто в твоєму гаражі')
 
-            for vehicle in connection.vehicles:
-                await update.message.reply_text(f'Авто {vehicle.model}')
+            for count, vehicle in enumerate(connection.vehicles):
+                vehicle_info = get_vehicle_base_info(vehicle)
+                await update.message.reply_text(f'{count+1}. '
+                                                f'{vehicle_info["model"]} '
+                                                f'{vehicle_info["manufactured"][0:4]} '
+                                                f'{vehicle_info["engine_capacity"]} '
+                                                f'{vehicle_info["engine_type"]}')
 
         await connection.terminate()
 
