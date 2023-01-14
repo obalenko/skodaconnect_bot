@@ -10,7 +10,7 @@ from telegram.ext import (
     ConversationHandler,
     filters
 )
-from core.auth import sc_login
+from core.connect_service import init_session, retrieve_vehicles
 
 TOKEN = os.getenv('TOKEN')
 SETUP, EMAIL, PASSWD = range(3)
@@ -23,9 +23,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         return ConversationHandler.END
 
     await update.message.reply_html(
-        rf'Привіт {user.full_name}! З моєю допомогою ти можеш керувати своєю автівкою Skoda!' +
-        ' Мене лише потрібно синхронізувати із твоїм обліковим записом Skoda Connect, а про все решта я подбаю! 💚' +
-        ' Щоб розпочати налаштування, відправ мені команду /setup'
+        f'Привіт, {user.full_name}! \n'
+        f'З моєю допомогою ти можеш керувати своєю автівкою Skoda! \n'
+        '\n'
+        'Мене лише потрібно синхронізувати із твоїм обліковим записом Skoda Connect, а про все інше я подбаю! 💚\n'
+        '\n'
+        'Щоб розпочати налаштування, відправ мені команду /setup'
     )
 
     return ConversationHandler.END
@@ -78,29 +81,25 @@ async def passwd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     # show user data
     user_data = context.user_data
 
-    connection = await sc_login(user_data.get('email'), user_data.get('password'))
+    connection = await init_session(user_data.get('email'), user_data.get('password'))
     if connection is not None:
-        await update.message.reply_text(f'✅ Авторизація успішна! Я отримав дані про твій автомобіль 🏎,'
-                                        f' тож тепер усе що потрібно, питай у мене 😉')
-        context.user_data["connection_stream"] = connection
-        car_name = await _get_car_details(connection)
+        await update.message.reply_text(f'✅ Авторизація успішна! Отримую дані про твої авто... 🚗 ')
+        await retrieve_vehicles(connection)
 
-        if car_name:
-            await update.message.reply_text(f'Знайшов твою {car_name} у гаражі. Гарненька! 💚')
+        if len(connection.vehicles) < 1:
+            await update.message.reply_text(f'Не знайшов жодної автівки у твоєму гаражі 🤷‍♂️')
         else:
-            await update.message.reply_text(f'Хмм... не бачу твоєї автівки в гаражі')
+            await update.message.reply_text(f'Знайшов {len(connection.vehicles)} авто в твоєму гаражі')
+
+            for vehicle in connection.vehicles:
+                await update.message.reply_text(f'Авто {vehicle.model}')
+
+        await connection.terminate()
 
     else:
         await update.message.reply_text(f'❌ На жаль, щось пішло не так, авторизація не успішна!')
 
     return ConversationHandler.END
-
-
-# TODO: move to core, refactor to retrieve more info
-async def _get_car_details(connection):
-    car = await connection.get_vehicles()
-    car_name = car[0]['vehicleSpecification'].get('title') if car else {}
-    return car_name
 
 
 if __name__ == '__main__':
