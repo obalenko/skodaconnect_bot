@@ -35,17 +35,22 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /help is issued."""
-    await update.message.reply_text("От халепа ☹️, мій розробник ще на написав детальну інструкцію з описом всіх команд :( "
-                                    "Він вже працює над цим!")
+    await update.message.reply_text('От халепа ☹️, мій розробник ще на написав детальну інструкцію з описом всіх команд :( '
+                                    'Він вже працює над цим!')
 
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Cancels and ends the conversation."""
     await update.message.reply_text(
-        "Йолкі-палки! Ти перервав процес налаштування, доведеться починати з початку! 🫣 "
+        'Йолкі-палки! Ти перервав процес налаштування, доведеться починати з початку! 🫣 '
     )
 
     return ConversationHandler.END
+
+
+async def garage(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Select vehicle to manage"""
+    await update.message.reply_text('От халепа ☹️, мій розробник ще не навчив мене цьому!')
 
 
 async def setup(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -65,7 +70,7 @@ async def setup(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 async def email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Get email from user to authorize in Skoda Connect service."""
     text = update.message.text
-    context.user_data["email"] = text
+    context.user_data['email'] = text
     await update.message.reply_text(f'🔑 Тепер відправ мені пароль')
 
     return PASSWD
@@ -74,7 +79,7 @@ async def email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 async def passwd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Get password from user to authorize in Skoda Connect service"""
     text = update.message.text
-    context.user_data["password"] = text
+    context.user_data['password'] = text
     await update.message.reply_text(f'🔄 Авторизуюсь у сервісі Skoda Connect...')
 
     # show user data
@@ -108,16 +113,16 @@ async def passwd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 if __name__ == '__main__':
     application = Application.builder().token(TOKEN).build()
-    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler('start', start))
 
     credentials_handler = ConversationHandler(
-        entry_points=[CommandHandler("setup", setup)],
+        entry_points=[CommandHandler('setup', setup)],
         states={
             EMAIL: [MessageHandler(filters.TEXT & ~filters.COMMAND, email)],
             PASSWD: [MessageHandler(filters.TEXT & ~filters.COMMAND, passwd)],
         },
-        fallbacks=[CommandHandler("cancel", cancel)],
+        fallbacks=[CommandHandler('cancel', cancel)],
     )
-    application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler('help', help_command))
     application.add_handler(credentials_handler)
     application.run_polling()
