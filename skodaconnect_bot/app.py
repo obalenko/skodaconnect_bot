@@ -1,5 +1,4 @@
 import os
-from typing import Dict
 
 from telegram import Update
 from telegram.ext import (
@@ -89,7 +88,7 @@ async def passwd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         if len(connection.vehicles) < 1:
             await update.message.reply_text(f'Не знайшов жодної автівки у твоєму гаражі 🤷‍♂️')
         else:
-            await update.message.reply_text(f'Знайшов {len(connection.vehicles)} авто в твоєму гаражі')
+            await update.message.reply_text(f'Знайшов {len(connection.vehicles)} авто в твоєму гаражі:')
 
             for count, vehicle in enumerate(connection.vehicles):
                 vehicle_info = get_vehicle_base_info(vehicle)
