@@ -4,18 +4,17 @@ from skodaconnect import Connection
 from core.config import COMPONENTS, is_enabled
 
 
-
 async def init_session(email, password, print_response=False):
     session = ClientSession(headers={'Connection': 'keep-alive'})
     login_success = False
-    print(f"Initiating new session to Skoda Connect using email {email}")
+    print(f'Initiating new session to Skoda Connect using email {email}')
     try:
         connection = Connection(session, email, password, print_response)
         if not login_success:
-            print("Attempting to login to the Skoda Connect service")
+            print('Attempting to login to the Skoda Connect service')
             login_success = await connection.doLogin()
     except Exception as e:
-        print(f"Login failed: {e}")
+        print(f'Login failed: {e}')
         return None
 
     if login_success:

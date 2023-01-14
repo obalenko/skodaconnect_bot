@@ -16,7 +16,7 @@ SETUP, EMAIL, PASSWD = range(3)
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Send a welcome message when the command /start is issued"""
+    '''Send a welcome message when the command /start is issued'''
     user = update.effective_user
     if context.user_data:
         return ConversationHandler.END
@@ -34,13 +34,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Send a message when the command /help is issued."""
+    '''Send a message when the command /help is issued.'''
     await update.message.reply_text('От халепа ☹️, мій розробник ще на написав детальну інструкцію з описом всіх команд :( '
                                     'Він вже працює над цим!')
 
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Cancels and ends the conversation."""
+    '''Cancels and ends the conversation.'''
     await update.message.reply_text(
         'Йолкі-палки! Ти перервав процес налаштування, доведеться починати з початку! 🫣 '
     )
@@ -49,12 +49,12 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 
 async def garage(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Select vehicle to manage"""
+    '''Select vehicle to manage'''
     await update.message.reply_text('От халепа ☹️, мій розробник ще не навчив мене цьому!')
 
 
 async def setup(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Starting point to setup Skoda Connect account synchronization."""
+    '''Starting point to setup Skoda Connect account synchronization.'''
     if context.user_data:
         await update.message.reply_text(
             rf'Схоже, що твій акаунт вже налаштовано'
@@ -68,7 +68,7 @@ async def setup(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 
 async def email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Get email from user to authorize in Skoda Connect service."""
+    '''Get email from user to authorize in Skoda Connect service.'''
     text = update.message.text
     context.user_data['email'] = text
     await update.message.reply_text(f'🔑 Тепер відправ мені пароль')
@@ -77,7 +77,7 @@ async def email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 
 async def passwd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Get password from user to authorize in Skoda Connect service"""
+    '''Get password from user to authorize in Skoda Connect service'''
     text = update.message.text
     context.user_data['password'] = text
     await update.message.reply_text(f'🔄 Авторизуюсь у сервісі Skoda Connect...')
