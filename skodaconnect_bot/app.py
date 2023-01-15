@@ -52,7 +52,7 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 async def garage(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     '''Select vehicle to manage'''
     connection = context.user_data.get('connection')
-    await update.message.reply_text('Select Vehicle', reply_markup=garage_menu_keyboard(connection))
+    await update.message.reply_text('Ось які авто є в твоєму гаражі:', reply_markup=garage_menu_keyboard(connection))
 
     return ConversationHandler.END
 
@@ -82,7 +82,7 @@ async def garage_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
     query = update.callback_query
     await query.answer()
-    await query.edit_message_text(text='Select Vehicle', reply_markup=garage_menu_keyboard(connection))
+    await query.edit_message_text(text='Ось які авто є в твоєму гаражі:', reply_markup=garage_menu_keyboard(connection))
 
 
 async def setup(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
