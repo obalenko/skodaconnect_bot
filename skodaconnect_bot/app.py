@@ -51,8 +51,14 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 async def garage(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     '''Select vehicle to manage'''
-    connection = context.user_data.get('connection')
-    await update.message.reply_text('Ось які авто є в твоєму гаражі:', reply_markup=garage_menu_keyboard(connection))
+    connection = context.user_data.get('connection', None)
+
+    if connection is None:
+        await update.message.reply_text(
+            'От хулєра! Твій гараж пустий, можливо ти не авторизувався, або у тебе немає жодного авто ☹️'
+        )
+    else:
+        await update.message.reply_text('Ось які авто є в твоєму гаражі:', reply_markup=garage_menu_keyboard(connection))
 
     return ConversationHandler.END
 
