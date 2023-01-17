@@ -2,10 +2,51 @@ from aiohttp import ClientSession
 from skodaconnect import Connection
 
 from core.config import COMPONENTS, is_enabled
+from core.exceptions import AuthorizationError
+
+
+class ConnectService():
+    '''Connect Service class'''
+    def __init__(self, email, password):
+        self.email = email
+        self.password = password
+
+        self.print_response = False
+        self.service_instance = None
+
+    def get_connection_instance(self):
+        return self.service_instance
+
+    async def session_init(self):
+        '''
+
+        :return:
+        '''
+        if self.service_instance:
+            return
+
+        session = ClientSession(headers={'Connection': 'keep-alive'})
+        try:
+            connection = Connection(
+                session,
+                self.email,
+                self.password,
+                self.print_response
+            )
+            login_success = await connection.doLogin()
+        except Exception as e:
+            raise AuthorizationError(f'Login failed {e}')
+
+        if not login_success:
+            raise AuthorizationError('Login failed. Please, verify if email or password is correct and try again.')
+
+        self.service_instance = connection
+
 
 
 async def init_session(email, password, print_response=False):
     session = ClientSession(headers={'Connection': 'keep-alive'})
+    session.close()
     login_success = False
     print(f'Initiating new session to Skoda Connect using email {email}')
     try:

@@ -1,6 +1,6 @@
 import os
 
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -10,10 +10,12 @@ from telegram.ext import (
     CallbackQueryHandler,
     filters
 )
-from core.connect_service import init_session, retrieve_vehicles, get_vehicle_base_info
+from core.connect_service import retrieve_vehicles, ConnectService
+from menu import garage_menu, garage_menu_keyboard
 
 TOKEN = os.getenv('TOKEN')
 SETUP, EMAIL, PASSWD = range(3)
+VEHICLE_SELECTION = range(1)
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -60,36 +62,6 @@ async def garage(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     else:
         await update.message.reply_text('Ось які авто є в твоєму гаражі:', reply_markup=garage_menu_keyboard(connection))
 
-    return ConversationHandler.END
-
-
-def garage_menu_keyboard(connection):
-    '''
-
-    :param connection:
-    :return:
-    '''
-    keyboard = []
-
-    for vehicle in connection.vehicles:
-        vehicle_info = get_vehicle_base_info(vehicle)
-        vehicle_name = f'{vehicle_info["model"]} ' \
-                       f'{vehicle_info["manufactured"][0:4]} ' \
-                       f'{vehicle_info["engine_capacity"]} ' \
-                       f'{vehicle_info["engine_type"]}'
-        keyboard.append([InlineKeyboardButton(vehicle_name, callback_data='garage_menu')])
-
-    return InlineKeyboardMarkup(keyboard)
-
-
-async def garage_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    '''Menu builder to select vehicle'''
-    connection = context.user_data.get('connection')
-
-    query = update.callback_query
-    await query.answer()
-    await query.edit_message_text(text='Ось які авто є в твоєму гаражі:', reply_markup=garage_menu_keyboard(connection))
-
 
 async def setup(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     '''Starting point to setup Skoda Connect account synchronization.'''
@@ -123,7 +95,10 @@ async def passwd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     # show user data
     user_data = context.user_data
 
-    connection = await init_session(user_data.get('email'), user_data.get('password'))
+    conn_service = ConnectService(user_data.get('email'), user_data.get('password'))
+    await conn_service.session_init()
+    connection = conn_service.get_connection_instance()
+
     if connection is not None:
         await update.message.reply_text(f'✅ Авторизація успішна! Отримую дані про твої авто... 🚗 ')
         await retrieve_vehicles(connection)
@@ -134,7 +109,7 @@ async def passwd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
             await update.message.reply_text(f'Знайшов {len(connection.vehicles)} авто в твоєму гаражі \n'
                                             f'Відправ /garage щоб перейти у гараж і обрати авто')
 
-            context.user_data['connection'] = connection
+            context.user_data['connection'] = conn_service
             return ConversationHandler.END
     else:
         await update.message.reply_text(f'❌ На жаль, щось пішло не так, авторизація не успішна!')
@@ -156,6 +131,6 @@ if __name__ == '__main__':
     )
     application.add_handler(CommandHandler('help', help_command))
     application.add_handler(CommandHandler('garage', garage))
-    application.add_handler(CallbackQueryHandler(garage_menu, pattern='garage_menu')) #TODO: change pattern reference
+    application.add_handler(CallbackQueryHandler(garage_menu))
     application.add_handler(credentials_handler)
     application.run_polling()
