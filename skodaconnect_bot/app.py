@@ -10,7 +10,7 @@ from telegram.ext import (
     CallbackQueryHandler,
     filters
 )
-from core.connect_service import retrieve_vehicles, ConnectService
+from core.connect_service import SkodaConnectService
 from menu import garage_menu, garage_menu_keyboard
 
 TOKEN = os.getenv('TOKEN')
@@ -95,13 +95,13 @@ async def passwd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     # show user data
     user_data = context.user_data
 
-    conn_service = ConnectService(user_data.get('email'), user_data.get('password'))
+    conn_service = SkodaConnectService(user_data.get('email'), user_data.get('password'))
     await conn_service.session_init()
     connection = conn_service.get_connection_instance()
 
     if connection is not None:
         await update.message.reply_text(f'✅ Авторизація успішна! Отримую дані про твої авто... 🚗 ')
-        await retrieve_vehicles(connection)
+        await connection.retrieve_vehicles()
 
         if len(connection.vehicles) < 1:
             await update.message.reply_text(f'Не знайшов жодної автівки у твоєму гаражі 🤷‍♂️')
