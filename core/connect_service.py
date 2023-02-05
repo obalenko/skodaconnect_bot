@@ -8,19 +8,22 @@ from core.exceptions import AuthorizationError, VehicleRetrieveError, ServiceUpd
 
 class ConnectService():
     '''Base connect service'''
-    def __init__(self, name, email, password):
-        self.__name = name
-        self.__email = email
-        self.__password = password # TODO: hash
+    def __init__(self, email, password):
+        self._email = email
+        self._password = password
 
 
 class SkodaConnectService(ConnectService):
     '''Skoda Connect Service'''
-    def __init__(self):
-        super(ConnectService, self).__init__()
+    def __init__(self, email, password):
+        super(SkodaConnectService, self).__init__(email, password)
 
         self._print_response = False
         self._service_instance = None
+
+    @property
+    def vehicles(self):
+        return self._service_instance.vehicles
 
     def get_connection_instance(self):
         return self._service_instance
@@ -37,8 +40,8 @@ class SkodaConnectService(ConnectService):
         try:
             connection = Connection(
                 session,
-                self.__email,
-                self.__password,
+                self._email,
+                self._password,
                 self._print_response
             )
             login_success = await connection.doLogin()
@@ -74,23 +77,19 @@ class SkodaConnectService(ConnectService):
                 raise InstrumentLoadError(f'Failed to load instruments: {e}')
 
 
-class SkodaVehicle(Vehicle):
-    def __init__(self):
-        super(Vehicle, self).__init__()
+def get_vehicle_base_info(vehicle) -> dict:
+    '''
 
-    def get_vehicle_base_info(self) -> dict:
-        '''
-
-        :param vehicle:
-        :return:
-        '''
-        base_info = {
-            'model': self.model,
-            'vin': self.vin,
-            'manufactured': self.model_year,
-            'connect_service_deactivated': self.deactivated,
-            'nickname': self.nickname if self.is_nickname_supported else None,
-            'engine_capacity': self.engine_capacity,
-            'engine_type': self.engine_type
-        }
-        return base_info
+    :param vehicle:
+    :return:
+    '''
+    base_info = {
+        'model': vehicle.model,
+        'vin': vehicle.vin,
+        'manufactured': vehicle.model_year,
+        'connect_service_deactivated': vehicle.deactivated,
+        'nickname': vehicle.nickname if vehicle.is_nickname_supported else None,
+        'engine_capacity': vehicle.engine_capacity,
+        'engine_type': vehicle.engine_type
+    }
+    return base_info

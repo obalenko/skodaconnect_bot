@@ -11,7 +11,9 @@ from telegram.ext import (
     filters
 )
 from core.connect_service import SkodaConnectService
-from menu import garage_menu, garage_menu_keyboard
+from menu import (
+    garage_menu, vehicle_menu, garage_menu_keyboard, vehicle_menu_keyboard
+)
 
 TOKEN = os.getenv('TOKEN')
 SETUP, EMAIL, PASSWD = range(3)
@@ -63,6 +65,20 @@ async def garage(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         await update.message.reply_text('Ось які авто є в твоєму гаражі:', reply_markup=garage_menu_keyboard(connection))
 
 
+async def vehicle(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    '''Select vehicle to manage'''
+    connection = context.user_data.get('connection', None)
+    selected_vehicle = context.user_data.get('selected_vehicle', None)
+
+    if not all([connection, selected_vehicle]):
+        await update.message.reply_text(
+            'Агов, не так швидко! Спочатку обери автівку в гаражі 🏠'
+        )
+        return ConversationHandler.END
+
+    await update.message.reply_text('Обирай команду для свого авто:', reply_markup=vehicle_menu_keyboard(connection))
+
+
 async def setup(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     '''Starting point to setup Skoda Connect account synchronization.'''
     if context.user_data:
@@ -97,11 +113,12 @@ async def passwd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
     conn_service = SkodaConnectService(user_data.get('email'), user_data.get('password'))
     await conn_service.session_init()
+    # connection instance
     connection = conn_service.get_connection_instance()
 
     if connection is not None:
         await update.message.reply_text(f'✅ Авторизація успішна! Отримую дані про твої авто... 🚗 ')
-        await connection.retrieve_vehicles()
+        await conn_service.retrieve_vehicles()
 
         if len(connection.vehicles) < 1:
             await update.message.reply_text(f'Не знайшов жодної автівки у твоєму гаражі 🤷‍♂️')
@@ -132,5 +149,7 @@ if __name__ == '__main__':
     application.add_handler(CommandHandler('help', help_command))
     application.add_handler(CommandHandler('garage', garage))
     application.add_handler(CallbackQueryHandler(garage_menu))
+    application.add_handler(CommandHandler('commands', vehicle))
+    application.add_handler(CallbackQueryHandler(vehicle_menu))
     application.add_handler(credentials_handler)
     application.run_polling()
